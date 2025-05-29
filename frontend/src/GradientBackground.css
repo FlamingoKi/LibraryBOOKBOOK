@@ -1,0 +1,26 @@
+.gradient-bg {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  background: linear-gradient(120deg, #F7C815 0%, #fab97c 40%, #EC9704 100%);
+  background-size: 200% 200%;
+  background-repeat: no-repeat;
+  animation: gradientMove 12s ease-in-out infinite;
+  filter: blur(2px); /* чуть больше blur для мягкости */
+  opacity: 0.85;      /* чуть больше прозрачности */
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
