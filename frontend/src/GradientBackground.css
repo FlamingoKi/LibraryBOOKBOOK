@@ -9,8 +9,8 @@
   background-size: 200% 200%;
   background-repeat: no-repeat;
   animation: gradientMove 12s ease-in-out infinite;
-  filter: blur(2px); /* чуть больше blur для мягкости */
-  opacity: 0.85;      /* чуть больше прозрачности */
+  filter: blur(2px);
+  opacity: 0.85;
 }
 
 @keyframes gradientMove {

@@ -9,21 +9,20 @@ import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import { useUserStore } from "../store/userStore";
 import { AppSnackbar } from "../App";
-import BookCard from "../components/BookCard"; // Новый компонент
+import BookCard from "../components/BookCard";
 
 function CatalogPage() {
   const [books, setBooks] = useState([]);
   const [activeRents, setActiveRents] = useState([]);
-  const [search, setSearch] = useState(""); // состояние для поиска
+  const [search, setSearch] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("info");
   const username = useUserStore((s) => s.username);
   const token = useUserStore((s) => s.token);
   const ws = useRef(null);
-  const navigate = useNavigate(); // добавлено
+  const navigate = useNavigate();
 
-  // функция загрузки книг с учётом поиска
   const fetchBooks = useCallback((searchQuery = "") => {
     let url = "http://localhost:8000/books";
     if (searchQuery) {
@@ -50,7 +49,6 @@ function CatalogPage() {
       .then(setActiveRents);
   }, [fetchBooks, token]);
 
-  // обновлять книги при изменении поиска
   useEffect(() => {
     fetchBooks(search);
   }, [search, fetchBooks]);
@@ -67,7 +65,6 @@ function CatalogPage() {
         setSnackbarMsg(`Книга "${data.book_title}" теперь доступна для аренды!`);
         setSnackbarSeverity("info");
         setSnackbarOpen(true);
-        // Можно обновить список книг и аренд, если нужно:
         fetchBooks();
         fetch("http://localhost:8000/active_rents", {
           headers: {
@@ -147,7 +144,6 @@ function CatalogPage() {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "stretch",
-                  // minHeight и height нужны для одинаковых форм карточек
                   minHeight: 420,
                   height: "100%",
                 }}

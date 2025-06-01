@@ -31,7 +31,6 @@ function ChatPage() {
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
-  // Загрузка истории из localStorage при монтировании
   useEffect(() => {
     if (!username) return;
     const saved = localStorage.getItem(getChatHistoryKey(username));
@@ -40,14 +39,12 @@ function ChatPage() {
     }
   }, [username]);
 
-  // Сохраняем историю в localStorage при изменении messages
   useEffect(() => {
     if (username) {
       localStorage.setItem(getChatHistoryKey(username), JSON.stringify(messages));
     }
   }, [messages, username]);
 
-  // Загрузка книг пользователя
   const fetchMyBooks = React.useCallback(() => {
     if (!username) return;
     fetch(`http://localhost:8000/my_requests?username=${username}`)
@@ -66,7 +63,6 @@ function ChatPage() {
       navigate("/", { replace: true });
       return;
     }
-    // WebSocket подключение и обработка сообщений
     ws.current = new WebSocket(`ws://localhost:8000/ws/chat/${username}`);
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -145,13 +141,11 @@ function ChatPage() {
     setInput("");
   };
 
-  // Передать книгу (открыть диалог)
   const handleOpenBookDialog = () => {
     setShowBookDialog(true);
     setSelectedBookId("");
   };
 
-  // Отправить предложение книги
   const handleSendBookOffer = () => {
     if (!selectedUser || !selectedBookId) return;
     const book = myBooks.find(b => b.book_id === Number(selectedBookId));
@@ -179,7 +173,6 @@ function ChatPage() {
     setSelectedBookId("");
   };
 
-  // Принять/отклонить предложение книги
   const handleBookOfferResponse = (from, book, accepted) => {
     ws.current.send(JSON.stringify({
       type: "book_offer_response",
@@ -188,7 +181,6 @@ function ChatPage() {
       accepted,
     }));
     setMessages((prev) => {
-      // Помечаем это предложение как обработанное (handled: true)
       const key = from;
       return {
         ...prev,
@@ -200,7 +192,6 @@ function ChatPage() {
       };
     });
     if (accepted) {
-      // Важно: from - отправитель, username - получатель
       fetch("http://localhost:8000/transfer_book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

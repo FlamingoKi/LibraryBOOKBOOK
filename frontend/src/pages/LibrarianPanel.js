@@ -15,9 +15,9 @@ import BooksTable from "../components/BooksTable";
 function LibrarianPanel() {
   const role = useUserStore((s) => s.role);
   const token = useUserStore((s) => s.token);
-  const username = useUserStore((s) => s.username); // добавлено
+  const username = useUserStore((s) => s.username);
   const ws = useRef(null);
-  const navigate = useNavigate(); // добавлено
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -29,7 +29,6 @@ function LibrarianPanel() {
   });
   const [file, setFile] = useState(null);
 
-  // --- Заявки ---
   const [requests, setRequests] = useState([]);
   const [books, setBooks] = useState([]);
   const [activeRents, setActiveRents] = useState([]);
@@ -37,7 +36,6 @@ function LibrarianPanel() {
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedBook, setSelectedBook] = useState("");
 
-  // --- Snackbar ---
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("info");
@@ -95,7 +93,6 @@ function LibrarianPanel() {
       .then((res) => res.json())
       .then(setUsers);
 
-    // WebSocket уведомление о доступности книги
     if (useUserStore.getState().username) {
       ws.current = new window.WebSocket(`ws://localhost:8000/ws/chat/${useUserStore.getState().username}`);
       ws.current.onmessage = (event) => {
@@ -133,7 +130,6 @@ function LibrarianPanel() {
   }
 
   const handleDeleteBook = (bookId) => {
-    // confirm заменяем на Snackbar с подтверждением
     if (!window.confirm("Удалить эту книгу?")) return;
     fetch("http://localhost:8000/admin/delete_book", {
       method: "POST",
@@ -196,7 +192,6 @@ function LibrarianPanel() {
       });
   }
 
-  // --- Добавление книги ---
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };

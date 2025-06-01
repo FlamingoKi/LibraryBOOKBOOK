@@ -12,7 +12,7 @@ function Navbar() {
 
   const handleLogout = () => {
     clearUser();
-    navigate("/", { replace: true }); // Используем navigate с replace
+    navigate("/", { replace: true });
   };
 
   return (

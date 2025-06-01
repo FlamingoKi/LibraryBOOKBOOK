@@ -26,7 +26,7 @@ function AdminPanel() {
     new_email: "",
   });
   const role = useUserStore((s) => s.role);
-  const username = useUserStore((s) => s.username); // добавлено
+  const username = useUserStore((s) => s.username);
   const navigate = useNavigate();
   const ws = useRef(null);
 
@@ -42,7 +42,6 @@ function AdminPanel() {
       setTimeout(() => navigate("/catalog", { replace: true }), 1200);
       return;
     }
-    // WebSocket уведомление о доступности книги
     if (useUserStore.getState().username) {
       ws.current = new window.WebSocket(`ws://localhost:8000/ws/chat/${useUserStore.getState().username}`);
       ws.current.onmessage = (event) => {
@@ -57,10 +56,8 @@ function AdminPanel() {
     return () => {
       ws.current && ws.current.close();
     };
-    // eslint-disable-next-line
   }, [role, username, navigate]);
 
-  // Fetch users
   const fetchUsers = () => {
     fetch("http://localhost:8000/users", {
       headers: {
@@ -74,10 +71,8 @@ function AdminPanel() {
 
   useEffect(() => {
     fetchUsers();
-    // eslint-disable-next-line
   }, [role]);
 
-  // Handle edit
   const handleEdit = (user) => {
     setEditForm({
       id: user.id,
@@ -90,7 +85,6 @@ function AdminPanel() {
     setEditDialogOpen(true);
   };
 
-  // Handle delete
   const handleDelete = (username) => {
     if (!window.confirm(`Удалить пользователя "${username}"?`)) return;
     fetch("http://localhost:8000/admin/delete_user", {
@@ -115,7 +109,6 @@ function AdminPanel() {
       });
   };
 
-  // Handle edit submit
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     const res = await fetch("http://localhost:8000/admin/edit_user", {

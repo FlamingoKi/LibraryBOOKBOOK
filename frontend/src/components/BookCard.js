@@ -49,8 +49,8 @@ function BookCard({ book, isRentedByMe, isRented }) {
         image={book.cover_url}
         alt={book.title}
         sx={{
-          width: 140, // увеличено
-          height: 190, // увеличено
+          width: 140,
+          height: 190,
           objectFit: "cover",
           borderRadius: 2,
           boxShadow: 1,

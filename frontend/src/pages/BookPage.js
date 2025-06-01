@@ -49,7 +49,6 @@ function BookPage() {
           setComments([]);
         }
       });
-    // Check if user already has a pending/approved request for this book
     if (username) {
       fetch(`http://localhost:8000/my_requests?username=${username}`)
         .then(res => res.json())

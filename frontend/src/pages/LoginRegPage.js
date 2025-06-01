@@ -22,7 +22,7 @@ function LoginPage() {
   const [resetMsg, setResetMsg] = useState("");
   const [showResetModal, setShowResetModal] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMsg, setSnackbarMsg] = useState(""); // добавьте это состояние
+  const [snackbarMsg, setSnackbarMsg] = useState("");
   const navigate = useNavigate();
   const setUser = useUserStore((s) => s.setUser);
 
@@ -84,7 +84,6 @@ function LoginPage() {
       setResetMsg("Письмо отправлено! Проверьте почту.");
       setSnackbarOpen(true);
     } else {
-      // Преобразуем ошибку в строку
       let msg = "";
       if (Array.isArray(data)) {
         msg = data.map(
@@ -105,7 +104,7 @@ function LoginPage() {
       sx={{
         maxWidth: 400,
         mx: "auto",
-        mt: 0, // убрали отступ сверху полностью
+        mt: 0,
         px: { xs: 1, sm: 2 },
         display: "flex",
         flexDirection: "column",

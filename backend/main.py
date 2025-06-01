@@ -67,7 +67,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def register(
     username: str = Body(...),
     password: str = Body(...),
-    email: str = Body(...),  # добавляем email
+    email: str = Body(...),
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.username == username).first()
@@ -167,10 +167,10 @@ def add_book_with_pdf(
     publisher: str = Form(...),
     description: str = Form(...),
     cover_url: str = Form(...),
-    pdf_file: UploadFile = File(...),  # <-- теперь pdf_file
+    pdf_file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    # Проверяем, что файл действительно PDF
+
     if not pdf_file.filename.lower().endswith('.pdf') or pdf_file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Загрузите файл в формате PDF")
     new_book = Book(
@@ -431,7 +431,6 @@ def librarian_give_book(username: str = Body(...), book_id: int = Body(...), db:
     if existing_rent:
         return {"message": "У пользователя уже есть активная аренда этой книги"}
 
-    # Исправлено: проверяем только активные заявки
     active_statuses = ["pending", "approved", "return_requested"]
     existing_request = db.query(Request).filter(
         Request.user_id == user.id,
@@ -465,44 +464,12 @@ def librarian_accept_return(data: AcceptReturnIn, db: Session = Depends(get_db))
     req = db.query(Request).filter(Request.id == data.request_id).first()
     if not req or req.status != "return_requested":
         raise HTTPException(status_code=404, detail="Заявка не найдена или не ожидает возврата")
-    # Найти и удалить аренду
     rent = db.query(Rent).filter(Rent.user_id == req.user_id, Rent.book_id == req.book_id).first()
     if rent:
         db.delete(rent)
     req.status = "returned"
     db.commit()
     return {"message": "Возврат книги принят"}
-
-class UserChatManager:
-    def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
-
-    async def connect(self, username: str, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections[username] = websocket
-
-    def disconnect(self, username: str):
-        if username in self.active_connections:
-            del self.active_connections[username]
-
-    async def send_personal_message(self, recipient: str, message: dict):
-        ws = self.active_connections.get(recipient)
-        if ws:
-            await ws.send_json(message)
-
-    async def broadcast_user_list(self):
-        users = list(self.active_connections.keys())
-        for ws in self.active_connections.values():
-            await ws.send_json({"type": "users", "users": users})
-
-    async def broadcast_book_available(self, book_id: int, book_title: str):
-        # Новое уведомление о доступности книги
-        for ws in self.active_connections.values():
-            await ws.send_json({
-                "type": "book_available",
-                "book_id": book_id,
-                "book_title": book_title
-            })
 
 user_chat_manager = UserChatManager()
 
@@ -513,7 +480,6 @@ async def websocket_chat(websocket: WebSocket, username: str):
     try:
         while True:
             data = await websocket.receive_json()
-            # data: {type, ...}
             msg_type = data.get("type", "message")
             if msg_type == "message":
                 recipient = data.get("to")
@@ -566,7 +532,6 @@ def change_password(data: ChangePasswordIn, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Пароль успешно изменён"}
 
-# In-memory store for reset tokens (for demo; use DB in production)
 reset_tokens = {}
 
 @app.post("/request_password_reset")
@@ -578,7 +543,6 @@ def request_password_reset(data: EmailIn, db: Session = Depends(get_db)):
     token = str(uuid4())
     reset_tokens[token] = user.username
     reset_link = f"http://localhost:3000/reset-password/{token}"
-    # Send email via Gmail SMTP
     try:
         smtp_user = os.environ.get("GMAIL_USER")
         smtp_pass = os.environ.get("GMAIL_PASS")
@@ -589,14 +553,13 @@ def request_password_reset(data: EmailIn, db: Session = Depends(get_db)):
         msg["Subject"] = "Сброс пароля"
         msg["From"] = smtp_user
         msg["To"] = email
-        # Используем порт 587 и starttls
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.ehlo()
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.sendmail(smtp_user, [email], msg.as_string())
     except Exception as e:
-        print("Ошибка при отправке email:", e)  # <-- добавьте это
+        print("Ошибка при отправке email:", e)
         raise HTTPException(status_code=500, detail=f"Ошибка отправки email: {e}")
     return {"message": "Письмо для сброса пароля отправлено на почту"}
 
@@ -626,21 +589,16 @@ def transfer_book(
     if not from_user or not to_user or not book:
         raise HTTPException(status_code=404, detail="Пользователь или книга не найдены")
 
-    # Удаляем аренду и заявку у отправителя
     rent = db.query(Rent).filter(Rent.user_id == from_user.id, Rent.book_id == book_id).first()
     if rent:
         db.delete(rent)
     req = db.query(Request).filter(Request.user_id == from_user.id, Request.book_id == book_id, Request.status == "approved").first()
     if req:
         req.status = "transferred"
-    # Удаляем все заявки получателя на эту книгу (pending/declined)
     db.query(Request).filter(Request.user_id == to_user.id, Request.book_id == book_id).delete()
-    # Добавляем аренду и заявку получателю
     new_rent = Rent(user_id=to_user.id, book_id=book_id)
     db.add(new_rent)
     new_req = Request(user_id=to_user.id, book_id=book_id, status="approved")
     db.add(new_req)
     db.commit()
-    # Оповестить через WebSocket о доступности книги (если нужно)
-    # await user_chat_manager.broadcast_book_available(book_id, book.title) # если нужно уведомление всем
     return {"message": f"Книга '{book.title}' передана от {from_username} к {to_username}"}

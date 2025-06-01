@@ -50,7 +50,6 @@ function ChatWindow({
                       }}>
                         {msg.from} предлагает вам книгу: {msg.book.book_title}
                       </Typography>
-                      {/* Кнопки только если не обработано */}
                       {!msg.handled && (
                         <Box sx={{ mt: 1 }}>
                           <Button

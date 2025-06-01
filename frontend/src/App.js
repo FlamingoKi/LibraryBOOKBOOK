@@ -16,7 +16,6 @@ import CssBaseline from "@mui/material/CssBaseline";
 import GradientBackground from "./GradientBackground";
 import ChatPage from "./pages/ChatPage";
 
-// Цветовая палитра
 const theme = createTheme({
   palette: {
     primary: {
@@ -41,7 +40,7 @@ const theme = createTheme({
     },
     background: {
       default: "#F7F4EF",
-      paper: "rgba(255,255,255,0.85)", // прозрачный белый
+      paper: "rgba(255,255,255,0.85)",
     },
     text: {
       primary: "#583E26",
@@ -71,7 +70,7 @@ const theme = createTheme({
           borderRadius: 16,
           border: "1.5px solid #A78B71",
           boxShadow: "0 2px 12px rgba(88,62,38,0.07)",
-          background: "rgba(255,255,255,0.85)", // прозрачный белый
+          background: "rgba(255,255,255,0.85)",
         },
       },
     },
@@ -79,7 +78,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
-          background: "rgba(255,255,255,0.85)", // прозрачный белый
+          background: "rgba(255,255,255,0.85)",
         },
       },
     },
@@ -106,7 +105,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
-          background: "rgba(88,62,38,0.92)", // чуть прозрачный основной цвет
+          background: "rgba(88,62,38,0.92)",
         },
       },
     },
@@ -114,14 +113,13 @@ const theme = createTheme({
       styleOverrides: {
         paper: {
           borderRadius: 16,
-          background: "rgba(255,255,255,0.92)", // чуть менее прозрачный для диалогов
+          background: "rgba(255,255,255,0.92)",
         },
       },
     },
   },
 });
 
-// Универсальный Snackbar для всего приложения
 export function AppSnackbar({ open, onClose, severity = "info", message, autoHideDuration = 2500 }) {
   return (
     <Snackbar

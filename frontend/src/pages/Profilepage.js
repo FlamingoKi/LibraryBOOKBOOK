@@ -34,7 +34,6 @@ function Profilepage() {
       return;
     }
     fetchRequests();
-    // WebSocket уведомление о доступности книги
     ws.current = new window.WebSocket(`ws://localhost:8000/ws/chat/${username}`);
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -65,7 +64,6 @@ function Profilepage() {
       setCancelId(id);
       setShowCommentForm(true);
     }
-    // Для других статусов отмена больше не поддерживается
   }
 
   function cancelPendingRequest(id) {
@@ -106,7 +104,7 @@ function Profilepage() {
         setSnackbarSeverity(ok ? "success" : "error");
         setSnackbarOpen(true);
         if (ok) {
-          fetchRequests(); // обновляем список после возврата
+          fetchRequests();
           setShowCommentForm(false);
           setCommentText("");
           setCommentRating(5);
