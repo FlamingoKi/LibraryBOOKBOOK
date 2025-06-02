@@ -9,7 +9,7 @@
 ## Используемые технологии
 
 ### Backend
-- **Python 3.11+**
+- **Python 3.12+**
 - **FastAPI** — backend-фреймворк
 - **SQLAlchemy** — ORM для работы с PostgreSQL
 - **Alembic** — миграции БД
@@ -17,6 +17,9 @@
 - **JWT (python-jose)** — аутентификация
 - **dotenv** — переменные окружения
 - **smtplib** — отправка email
+- **psycopg2-binary** — драйвер PostgreSQL
+- **python-multipart** — для загрузки файлов
+- **pydantic** — для валидации данных
 
 ### Frontend
 - **React (Create React App)**
@@ -45,7 +48,7 @@
 
 3. **Создайте базу в PostgresSQL:**
     ```
-    Назовите ее например library_db
+    Назовите ее library_db
     ```
 
 4. **Запустите сервер:**
@@ -150,8 +153,8 @@ Authorization: Bearer <token>
 
 ## Контакты
 
-- Автор: [ваше имя/email]
-- Репозиторий: [ссылка на репозиторий]
+- Автор: [FlamingoKI]
+- Репозиторий: [https://github.com/FlamingoKi/LibraryBOOKBOOK]
 
 ---
 
