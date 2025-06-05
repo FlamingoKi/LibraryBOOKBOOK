@@ -15,6 +15,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import GradientBackground from "./GradientBackground";
 import ChatPage from "./pages/ChatPage";
+import { useUserStore } from "./store/userStore";
 
 const theme = createTheme({
   palette: {
@@ -151,6 +152,12 @@ export function AppSnackbar({ open, onClose, severity = "info", message, autoHid
 }
 
 function App() {
+  // Подключаем глобальный snackbar
+  const snackbarOpen = useUserStore((s) => s.snackbarOpen);
+  const snackbarMsg = useUserStore((s) => s.snackbarMsg);
+  const snackbarSeverity = useUserStore((s) => s.snackbarSeverity);
+  const setSnackbar = useUserStore((s) => s.setSnackbar);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -169,6 +176,13 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
         </Routes>
       </Router>
+      <AppSnackbar
+        open={snackbarOpen}
+        onClose={() => setSnackbar({ open: false, msg: "" })}
+        severity={snackbarSeverity}
+        message={snackbarMsg}
+        autoHideDuration={2500}
+      />
     </ThemeProvider>
   );
 }

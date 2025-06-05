@@ -25,7 +25,11 @@ function ReturnsTable({ requests, handleAcceptReturn }) {
                   color="primary"
                   size="small"
                   sx={{ mt: 1 }}
-                  onClick={() => handleAcceptReturn({ request_id: r.id })}
+                  onClick={() => {
+                    if (window.confirm("Принять возврат этой книги?")) {
+                      handleAcceptReturn({ request_id: r.id });
+                    }
+                  }}
                 >
                   Принять возврат
                 </Button>

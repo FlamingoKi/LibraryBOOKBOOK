@@ -5,6 +5,7 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import { AppSnackbar } from "../App";
 import { useUserStore } from "../store/userStore";
+import { useAuthRedirect } from "../store/useAuthRedirect";
 import AddBookForm from "../components/AddBookForm";
 import RequestsTable from "../components/RequestsTable";
 import ReturnsTable from "../components/ReturnsTable";
@@ -13,6 +14,7 @@ import GiveBookForm from "../components/GiveBookForm";
 import BooksTable from "../components/BooksTable";
 
 function LibrarianPanel() {
+  useAuthRedirect();
   const role = useUserStore((s) => s.role);
   const token = useUserStore((s) => s.token);
   const username = useUserStore((s) => s.username);
@@ -46,9 +48,16 @@ function LibrarianPanel() {
         Authorization: `Bearer ${token || ""}`
       }
     })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (res.status === 403) {
+          setSnackbarMsg("Нет доступа к панели библиотекаря");
+          setTimeout(() => navigate("/profile", { replace: true }), 0);
+          return [];
+        }
+        return res.json();
+      })
       .then(setRequests);
-  }, [token]);
+  }, [token, navigate]);
 
   const fetchBooks = useCallback(() => {
     fetch("http://localhost:8000/books", {
@@ -71,17 +80,6 @@ function LibrarianPanel() {
   }, [token]);
 
   useEffect(() => {
-    if (!username) {
-      navigate("/", { replace: true });
-      return;
-    }
-    if (role !== "librarian") {
-      setSnackbarMsg("Доступ только для библиотекаря");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-      setTimeout(() => window.location.href = "/catalog", 1200);
-      return;
-    }
     fetchRequests();
     fetchBooks();
     fetchActiveRents();
@@ -131,7 +129,7 @@ function LibrarianPanel() {
 
   const handleDeleteBook = (bookId) => {
     if (!window.confirm("Удалить эту книгу?")) return;
-    fetch("http://localhost:8000/admin/delete_book", {
+    fetch("http://localhost:8000/librarian/delete_book", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -246,7 +244,7 @@ function LibrarianPanel() {
           cover_url: "",
         });
         setFile(null);
-        fetchBooks();
+        Promise.all([fetchBooks(), fetchActiveRents()]);
       }
     } catch (err) {
       setSnackbarMsg("Ошибка при добавлении книги");
@@ -277,8 +275,8 @@ function LibrarianPanel() {
         setSnackbarSeverity(ok ? "success" : "error");
         setSnackbarOpen(true);
         if (ok) {
-          fetchActiveRents();
-          fetchRequests();
+          // Тут тоже через эту фигню объеденил
+          Promise.all([fetchActiveRents(), fetchRequests()]);
         }
       })
       .catch(() => {

@@ -77,7 +77,11 @@ function RequestCard({ title, requests, emptyText, cancelRequest, type }) {
                       "&:hover": { borderColor: "#9C4A1A", color: "#9C4A1A" },
                     }}
                     size="small"
-                    onClick={() => cancelRequest(r.id, r.status)}
+                    onClick={() => {
+                      if (window.confirm("Вы уверены, что хотите отменить бронь?")) {
+                        cancelRequest(r.id, r.status);
+                      }
+                    }}
                   >
                     Отменить бронь
                   </Button>

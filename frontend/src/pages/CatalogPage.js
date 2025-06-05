@@ -10,8 +10,11 @@ import Box from "@mui/material/Box";
 import { useUserStore } from "../store/userStore";
 import { AppSnackbar } from "../App";
 import BookCard from "../components/BookCard";
+import { useAuthRedirect } from "../store/useAuthRedirect";
 
 function CatalogPage() {
+  useAuthRedirect();
+
   const [books, setBooks] = useState([]);
   const [activeRents, setActiveRents] = useState([]);
   const [search, setSearch] = useState("");
@@ -79,6 +82,11 @@ function CatalogPage() {
       ws.current && ws.current.close();
     };
   }, [username, fetchBooks, token, navigate]);
+
+  if (!username) {
+    window.location.href = "/";
+    return null;
+  }
 
   const rentedBookIds = activeRents.map((r) => r.book_id);
   const myRentedBookIds = activeRents.filter(r => r.username === username).map(r => r.book_id);

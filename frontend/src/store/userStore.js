@@ -18,4 +18,13 @@ export const useUserStore = create((set) => ({
     localStorage.removeItem("token");
     set({ username: "", role: "", token: "" });
   },
+  snackbarOpen: false,
+  snackbarMsg: "",
+  snackbarSeverity: "info",
+  setSnackbar: ({ open, msg, severity = "info" }) =>
+    set({
+      snackbarOpen: open,
+      snackbarMsg: msg,
+      snackbarSeverity: severity,
+    }),
 }));

@@ -6,16 +6,33 @@ import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 
 function ResetPasswordForm() {
   const { token } = useParams();
   const [newPassword, setNewPassword] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState([]);
+  const [showPasswordChecks, setShowPasswordChecks] = useState(false);
   const navigate = useNavigate();
+
+  const passwordChecks = [
+    { test: (v) => v.length >= 8, label: "Минимум 8 символов" },
+    { test: (v) => /[A-Z]/.test(v), label: "Хотя бы одна заглавная буква" },
+    { test: (v) => /[a-z]/.test(v), label: "Хотя бы одна строчная буква" },
+    { test: (v) => /\d/.test(v), label: "Хотя бы одна цифра" },
+    { test: (v) => /[^A-Za-z0-9]/.test(v), label: "Хотя бы один специальный символ" },
+  ];
 
   const handleReset = async (e) => {
     e.preventDefault();
+    let errs = [];
+    if (!passwordChecks.every(c => c.test(newPassword))) {
+      errs.push("Пароль не соответствует требованиям");
+    }
+    setErrors(errs);
+    if (errs.length) return;
     setLoading(true);
     setMsg("");
     const res = await fetch("http://localhost:8000/reset_password", {
@@ -66,14 +83,32 @@ function ResetPasswordForm() {
             label="Новый пароль"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
+            onFocus={() => setShowPasswordChecks(true)}
             required
             sx={{
-              mb: 2,
+              mb: 1,
               "& .MuiOutlinedInput-root": { borderRadius: 8 },
               "& label": { color: "#A78B71" },
             }}
             InputProps={{ style: { color: "#583E26" } }}
           />
+          {showPasswordChecks && (
+            <Box sx={{ mb: 2, ml: 1 }}>
+              {passwordChecks.map((c, i) => (
+                <Typography
+                  key={i}
+                  variant="caption"
+                  sx={{
+                    color: c.test(newPassword) ? "green" : "#EC9704",
+                    display: "block",
+                    fontWeight: c.test(newPassword) ? 600 : 400,
+                  }}
+                >
+                  {c.test(newPassword) ? "✓" : "•"} {c.label}
+                </Typography>
+              ))}
+            </Box>
+          )}
           <Button
             type="submit"
             variant="contained"
@@ -89,6 +124,19 @@ function ResetPasswordForm() {
             {loading ? "Отправка..." : "Сбросить пароль"}
           </Button>
         </form>
+        {errors.length > 0 && (
+          <Alert
+            severity="warning"
+            sx={{
+              mt: 2,
+              background: "#EC9704",
+              color: "#583E26",
+              fontWeight: 600,
+            }}
+          >
+            {errors.map((err, i) => <div key={i}>{err}</div>)}
+          </Alert>
+        )}
         {msg && (
           <Alert
             severity={msg.includes("успешно") ? "success" : "warning"}

@@ -64,6 +64,11 @@ function AddBookForm({ formData, setFormData, file, setFile, handleSubmit, handl
             Загрузить PDF
             <input type="file" accept=".pdf,application/pdf" hidden onChange={handleFileChange} required />
           </Button>
+          {file && (
+            <Typography variant="caption" sx={{ color: "#A78B71", ml: 1 }}>
+              {file.name}
+            </Typography>
+          )}
           <Button
             type="submit"
             variant="contained"

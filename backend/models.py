@@ -7,7 +7,6 @@ Base = declarative_base()
 
 
 class User(Base):
-    """User model."""
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
@@ -16,7 +15,6 @@ class User(Base):
     email = Column(String, unique=True, index=True)
 
 class Book(Base):
-    """Book model."""
     __tablename__ = "books"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
@@ -28,7 +26,6 @@ class Book(Base):
     pdf_path = Column(String)
 
 class Rent(Base):
-    """Rent model."""
     __tablename__ = "rents"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
@@ -36,7 +33,6 @@ class Rent(Base):
     rented_at = Column(DateTime, default=datetime.utcnow)
 
 class Request(Base):
-    """Request model."""
     __tablename__ = "requests"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
@@ -45,7 +41,6 @@ class Request(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Comment(Base):
-    """Comment model."""
     __tablename__ = "comments"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))

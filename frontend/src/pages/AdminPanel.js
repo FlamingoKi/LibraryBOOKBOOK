@@ -5,16 +5,14 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import { AppSnackbar } from "../App";
 import { useUserStore } from "../store/userStore";
+import { useAuthRedirect } from "../store/useAuthRedirect";
 import AddUserForm from "../components/AddUserForm";
 import UserTable from "../components/UserTable";
 import EditUserDialog from "../components/EditUserDialog";
 
 function AdminPanel() {
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMsg, setSnackbarMsg] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState("info");
+  useAuthRedirect();
   const [users, setUsers] = useState([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -29,34 +27,26 @@ function AdminPanel() {
   const username = useUserStore((s) => s.username);
   const navigate = useNavigate();
   const ws = useRef(null);
+  const setSnackbar = useUserStore((s) => s.setSnackbar);
 
   useEffect(() => {
-    if (!username) {
-      navigate("/", { replace: true });
-      return;
-    }
-    if (role !== "admin") {
-      setSnackbarMsg("Доступ только для администратора");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-      setTimeout(() => navigate("/catalog", { replace: true }), 1200);
-      return;
-    }
     if (useUserStore.getState().username) {
       ws.current = new window.WebSocket(`ws://localhost:8000/ws/chat/${useUserStore.getState().username}`);
       ws.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === "book_available") {
-          setSnackbarMsg(`Книга "${data.book_title}" теперь доступна для аренды!`);
-          setSnackbarSeverity("info");
-          setSnackbarOpen(true);
+          setSnackbar({
+            open: true,
+            msg: `Книга "${data.book_title}" теперь доступна для аренды!`,
+            severity: "info",
+          });
         }
       };
     }
     return () => {
       ws.current && ws.current.close();
     };
-  }, [role, username, navigate]);
+  }, [role, username, navigate, setSnackbar]);
 
   const fetchUsers = () => {
     fetch("http://localhost:8000/users", {
@@ -64,13 +54,25 @@ function AdminPanel() {
         Authorization: `Bearer ${useUserStore.getState().token || ""}`
       }
     })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (res.status === 403) {
+          setSnackbar({
+            open: true,
+            msg: "Нет доступа к админ-панели",
+            severity: "error",
+          });
+          setTimeout(() => navigate("/profile", { replace: true }), 0);
+          return [];
+        }
+        return res.json();
+      })
       .then(setUsers)
       .catch(() => setUsers([]));
   };
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line
   }, [role]);
 
   const handleEdit = (user) => {
@@ -97,15 +99,19 @@ function AdminPanel() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setSnackbarMsg(data.message || "Пользователь удалён");
-        setSnackbarSeverity("success");
-        setSnackbarOpen(true);
+        setSnackbar({
+          open: true,
+          msg: data.message || "Пользователь удалён",
+          severity: "success",
+        });
         fetchUsers();
       })
       .catch(() => {
-        setSnackbarMsg("Ошибка удаления пользователя");
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
+        setSnackbar({
+          open: true,
+          msg: "Ошибка удаления пользователя",
+          severity: "error",
+        });
       });
   };
 
@@ -128,15 +134,19 @@ function AdminPanel() {
     });
     const data = await res.json();
     if (res.ok) {
-      setSnackbarMsg(data.message || "Пользователь обновлён");
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
+      setSnackbar({
+        open: true,
+        msg: data.message || "Пользователь обновлён",
+        severity: "success",
+      });
       setEditDialogOpen(false);
       fetchUsers();
     } else {
-      setSnackbarMsg(data.detail || "Ошибка обновления пользователя");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
+      setSnackbar({
+        open: true,
+        msg: data.detail || "Ошибка обновления пользователя",
+        severity: "error",
+      });
     }
   };
 
@@ -166,9 +176,6 @@ function AdminPanel() {
           <AddUserForm
             onUserAdded={fetchUsers}
             token={useUserStore.getState().token}
-            setSnackbarMsg={setSnackbarMsg}
-            setSnackbarSeverity={setSnackbarSeverity}
-            setSnackbarOpen={setSnackbarOpen}
           />
           <UserTable users={users} onEdit={handleEdit} onDelete={handleDelete} />
         </CardContent>
@@ -179,13 +186,6 @@ function AdminPanel() {
         editForm={editForm}
         setEditForm={setEditForm}
         onSubmit={handleEditSubmit}
-      />
-      <AppSnackbar
-        open={snackbarOpen}
-        onClose={() => setSnackbarOpen(false)}
-        severity={snackbarSeverity}
-        message={snackbarMsg}
-        autoHideDuration={2500}
       />
     </Box>
   );

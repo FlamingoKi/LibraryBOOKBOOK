@@ -5,10 +5,12 @@ import Navbar from "../components/Navbar";
 import Box from "@mui/material/Box";
 import { AppSnackbar } from "../App";
 import { useUserStore } from "../store/userStore";
+import { useAuthRedirect } from "../store/useAuthRedirect";
 import BookInfoCard from "../components/BookInfoCard";
 import BookComments from "../components/BookComments";
 
 function BookPage() {
+  useAuthRedirect();
   const { bookId } = useParams();
   const [book, setBook] = useState(null);
   const [comments, setComments] = useState([]);
@@ -23,41 +25,30 @@ function BookPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!username) {
-      navigate("/", { replace: true });
-      return;
-    }
     if (!bookId) return;
-    fetch(`http://localhost:8000/books?`, {
-      headers: {
-        Authorization: `Bearer ${token || ""}`
-      }
-    })
-      .then(res => res.json())
-      .then(data => {
-        const b = data.find(b => b.id === Number(bookId));
-        setBook(b || null);
-        if (b) {
-          fetch(`http://localhost:8000/comments/${bookId}`, {
-            headers: {
-              Authorization: `Bearer ${token || ""}`
-            }
-          })
-            .then(res => res.json())
-            .then(setComments);
-        } else {
-          setComments([]);
-        }
-      });
-    if (username) {
+    // Тут я черканул все через Promise.all что бы и то и то сразу загрузить
+    Promise.all([
+      fetch(`http://localhost:8000/books?`, {
+        headers: { Authorization: `Bearer ${token || ""}` }
+      }).then(res => res.json()),
       fetch(`http://localhost:8000/my_requests?username=${username}`)
         .then(res => res.json())
-        .then(data => {
-          if (data.some(r => r.book_id === Number(bookId) && (r.status === "pending" || r.status === "approved"))) {
-            setBooked(true);
-          }
-        });
-    }
+    ]).then(([booksData, requestsData]) => {
+      const b = booksData.find(b => b.id === Number(bookId));
+      setBook(b || null);
+      if (b) {
+        fetch(`http://localhost:8000/comments/${bookId}`, {
+          headers: { Authorization: `Bearer ${token || ""}` }
+        })
+          .then(res => res.json())
+          .then(setComments);
+      } else {
+        setComments([]);
+      }
+      if (requestsData.some(r => r.book_id === Number(bookId) && (r.status === "pending" || r.status === "approved"))) {
+        setBooked(true);
+      }
+    });
 
     if (username) {
       ws.current = new window.WebSocket(`ws://localhost:8000/ws/chat/${username}`);

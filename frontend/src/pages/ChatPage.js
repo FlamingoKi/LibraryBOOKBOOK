@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "../store/userStore";
+import { useAuthRedirect } from "../store/useAuthRedirect";
 import Navbar from "../components/Navbar";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -215,6 +216,13 @@ function ChatPage() {
         });
     }
   };
+
+  useAuthRedirect();
+
+  if (!username) {
+    window.location.href = "/";
+    return null;
+  }
 
   return (
     <Box sx={{ maxWidth: 900, mx: "auto", mt: 5, minHeight: "80vh" }}>

@@ -23,6 +23,7 @@ function LoginPage() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
+  const [errors, setErrors] = useState([]);
   const navigate = useNavigate();
   const setUser = useUserStore((s) => s.setUser);
 
@@ -34,12 +35,17 @@ function LoginPage() {
     };
   }, []);
 
-  const handleLogin = async () => {
+  const validate = () => {
+    let errs = [];
     if (!username || !password) {
-      setSnackbarMsg("Введите логин и пароль");
-      setSnackbarOpen(true);
-      return;
+      errs.push("Введите логин и пароль");
     }
+    setErrors(errs);
+    return errs.length === 0;
+  };
+
+  const handleLogin = async () => {
+    if (!validate()) return;
     const res = await fetch("http://localhost:8000/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -87,14 +93,19 @@ function LoginPage() {
       let msg = "";
       if (Array.isArray(data)) {
         msg = data.map(
-          (err) => (err.msg ? `${err.msg}${err.input ? ` (${err.input})` : ""}` : JSON.stringify(err))
+          (err) =>
+            typeof err === "object"
+              ? (err.msg
+                  ? `${err.msg}${err.input ? ` (${err.input})` : ""}`
+                  : JSON.stringify(err))
+              : String(err)
         ).join("; ");
       } else if (typeof data === "object" && data !== null) {
         msg = data.detail || JSON.stringify(data);
       } else {
         msg = String(data);
       }
-      setResetMsg(msg || "Ошибка отправки письма");
+      setResetMsg(typeof msg === "string" ? msg : JSON.stringify(msg));
       setSnackbarOpen(true);
     }
   };
@@ -220,6 +231,11 @@ function LoginPage() {
             >
               Забыли пароль?
             </Button>
+          )}
+          {errors.length > 0 && (
+            <Alert severity="warning" sx={{ mt: 2, background: "#EC9704", color: "#583E26", fontWeight: 600 }}>
+              {errors.map((err, i) => <div key={i}>{err}</div>)}
+            </Alert>
           )}
         </CardContent>
       </Card>

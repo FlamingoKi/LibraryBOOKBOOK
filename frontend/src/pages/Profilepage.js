@@ -6,13 +6,14 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-import { AppSnackbar } from "../App";
 import { useUserStore } from "../store/userStore";
+import { useAuthRedirect } from "../store/useAuthRedirect";
 import ChangePasswordForm from "../components/ChangePasswordForm";
 import RequestCard from "../components/RequestCard";
 import CommentDialog from "../components/CommentDialog";
 
 function Profilepage() {
+  useAuthRedirect();
   const [requests, setRequests] = useState([]);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -21,26 +22,23 @@ function Profilepage() {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMsg, setSnackbarMsg] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState("info");
+  const [loading, setLoading] = useState(true);
   const username = useUserStore((s) => s.username);
   const navigate = useNavigate();
   const ws = useRef(null);
+  const setSnackbar = useUserStore((s) => s.setSnackbar);
 
   useEffect(() => {
-    if (!username) {
-      navigate("/", { replace: true });
-      return;
-    }
     fetchRequests();
     ws.current = new window.WebSocket(`ws://localhost:8000/ws/chat/${username}`);
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "book_available") {
-        setSnackbarMsg(`Книга "${data.book_title}" теперь доступна для аренды!`);
-        setSnackbarSeverity("info");
-        setSnackbarOpen(true);
+        setSnackbar({
+          open: true,
+          msg: `Книга "${data.book_title}" теперь доступна для аренды!`,
+          severity: "info",
+        });
         fetchRequests();
       }
     };
@@ -51,10 +49,12 @@ function Profilepage() {
   }, [username, navigate]);
 
   function fetchRequests() {
+    setLoading(true);
     fetch(`http://localhost:8000/my_requests?username=${username}`)
       .then((res) => res.json())
       .then(setRequests)
-      .catch(() => setRequests([]));
+      .catch(() => setRequests([]))
+      .finally(() => setLoading(false));
   }
 
   function cancelRequest(id, status) {
@@ -74,15 +74,19 @@ function Profilepage() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setSnackbarMsg(data.message);
-        setSnackbarSeverity(data.success === false ? "error" : "success");
-        setSnackbarOpen(true);
+        setSnackbar({
+          open: true,
+          msg: data.message,
+          severity: data.success === false ? "error" : "success",
+        });
         fetchRequests();
       })
       .catch(() => {
-        setSnackbarMsg("Ошибка отмены брони");
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
+        setSnackbar({
+          open: true,
+          msg: "Ошибка отмены брони",
+          severity: "error",
+        });
       });
   }
 
@@ -100,9 +104,11 @@ function Profilepage() {
     })
       .then((res) => res.json().then(data => ({ ok: res.ok, data })))
       .then(({ ok, data }) => {
-        setSnackbarMsg(data.message || (ok ? "Успешно" : "Ошибка"));
-        setSnackbarSeverity(ok ? "success" : "error");
-        setSnackbarOpen(true);
+        setSnackbar({
+          open: true,
+          msg: data.message || (ok ? "Успешно" : "Ошибка"),
+          severity: ok ? "success" : "error",
+        });
         if (ok) {
           fetchRequests();
           setShowCommentForm(false);
@@ -113,19 +119,32 @@ function Profilepage() {
         }
       })
       .catch(() => {
-        setSnackbarMsg("Ошибка отправки отзыва");
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
+        setSnackbar({
+          open: true,
+          msg: "Ошибка отправки отзыва",
+          severity: "error",
+        });
         setShowCommentForm(false);
       });
   }
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
+    let errors = [];
     if (!oldPassword || !newPassword) {
-      setSnackbarMsg("Введите оба пароля");
-      setSnackbarSeverity("warning");
-      setSnackbarOpen(true);
+      errors.push("Введите оба пароля");
+    }
+    if (newPassword.length < 8) errors.push("минимум 8 символов");
+    if (!/[A-Z]/.test(newPassword)) errors.push("хотя бы одну заглавную букву");
+    if (!/[a-z]/.test(newPassword)) errors.push("хотя бы одну строчную букву");
+    if (!/\d/.test(newPassword)) errors.push("хотя бы одну цифру");
+    if (!/[^A-Za-z0-9]/.test(newPassword)) errors.push("хотя бы один специальный символ");
+    if (errors.length) {
+      setSnackbar({
+        open: true,
+        msg: errors.join("; "),
+        severity: "warning",
+      });
       return;
     }
     const res = await fetch("http://localhost:8000/change_password", {
@@ -139,16 +158,35 @@ function Profilepage() {
     });
     const data = await res.json();
     if (res.ok) {
-      setSnackbarMsg("Пароль успешно изменён");
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
+      setSnackbar({
+        open: true,
+        msg: "Пароль успешно изменён",
+        severity: "success",
+      });
       setShowChangePassword(false);
       setOldPassword("");
       setNewPassword("");
     } else {
-      setSnackbarMsg(data.detail || "Ошибка смены пароля");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
+      let msg = "";
+      if (Array.isArray(data)) {
+        msg = data.map(
+          (err) =>
+            typeof err === "object"
+              ? (err.msg
+                  ? `${err.msg}${err.input ? ` (${err.input})` : ""}`
+                  : JSON.stringify(err))
+              : String(err)
+        ).join("; ");
+      } else if (typeof data === "object" && data !== null) {
+        msg = data.detail || JSON.stringify(data);
+      } else {
+        msg = String(data);
+      }
+      setSnackbar({
+        open: true,
+        msg: typeof msg === "string" ? msg : JSON.stringify(msg),
+        severity: "error",
+      });
     }
   };
 
@@ -194,22 +232,30 @@ function Profilepage() {
       </Card>
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <RequestCard
-            title="В броне (ожидает одобрения)"
-            requests={requests.filter((r) => r.status === "pending")}
-            emptyText="Нет активных броней."
-            cancelRequest={cancelRequest}
-            type="pending"
-          />
+          {loading ? (
+            <Typography sx={{ color: "#9C4A1A" }}>Загрузка...</Typography>
+          ) : (
+            <RequestCard
+              title="В броне (ожидает одобрения)"
+              requests={requests.filter((r) => r.status === "pending")}
+              emptyText="Нет активных броней."
+              cancelRequest={cancelRequest}
+              type="pending"
+            />
+          )}
         </Grid>
         <Grid item xs={12} md={6}>
-          <RequestCard
-            title="Забронированные (одобрено)"
-            requests={requests.filter((r) => r.status === "approved")}
-            emptyText="Нет забронированных книг."
-            cancelRequest={cancelRequest}
-            type="approved"
-          />
+          {loading ? (
+            <Typography sx={{ color: "#9C4A1A" }}>Загрузка...</Typography>
+          ) : (
+            <RequestCard
+              title="Забронированные (одобрено)"
+              requests={requests.filter((r) => r.status === "approved")}
+              emptyText="Нет забронированных книг."
+              cancelRequest={cancelRequest}
+              type="approved"
+            />
+          )}
         </Grid>
       </Grid>
       <CommentDialog
@@ -220,13 +266,6 @@ function Profilepage() {
         commentRating={commentRating}
         setCommentRating={setCommentRating}
         handleCommentSubmit={handleCommentSubmit}
-      />
-      <AppSnackbar
-        open={snackbarOpen}
-        onClose={() => setSnackbarOpen(false)}
-        severity={snackbarSeverity}
-        message={snackbarMsg}
-        autoHideDuration={2500}
       />
     </Box>
   );
